@@ -45,7 +45,9 @@ class PhotoViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["POST", "GET"])
     def request_photos(self, request):
+        print(request.data)
         if not request.user.is_authenticated:
+            print(request.user.username)
             return Response({"error": "You must be logged in"}, status=status.HTTP_401_UNAUTHORIZED)
 
         if request.method == "POST":
@@ -62,7 +64,8 @@ class PhotoViewSet(viewsets.ModelViewSet):
                     "id": photo.id,
                     "userprofile": {
                         "id": photo.userprofile.id,
-                        "profile_picture": photo.userprofile.profile_picture.url
+                        "profile_picture": photo.userprofile.profile_picture.url,
+                        "username": photo.userprofile.user.username
                     },
                     "image": photo.image.url
                 })
@@ -75,11 +78,7 @@ class PhotoViewSet(viewsets.ModelViewSet):
         for photo in Photo.objects.filter(userprofile=request.user.userprofile):
             photos.append({
                     "id": photo.id,
-                    "userprofile": {
-                        "id": photo.userprofile.id,
-                        "profile_picture": photo.userprofile.profile_picture.url
-                    },
                     "image": photo.image.url
                 })
-        response = {"photos" : photos, "user": request.user.username}
+        response = {"photos" : photos, "user": { "username": request.user.username, "profile_picture": request.user.userprofile.profile_picture.url }}
         return Response(response, status=status.HTTP_200_OK)
