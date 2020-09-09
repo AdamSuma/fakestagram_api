@@ -27,13 +27,15 @@ class UserViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['POST'])
     def edit(self, request):
+        print(request.data)
         if not request.user.is_authenticated:
             return Response({"error": "You must be logged in"}, status=status.HTTP_401_UNAUTHORIZED)
-
         try:
-            request.user.userprofile.bio = request.data['bio']
-            request.user.userprofile.profile_picture = request.data['profile_picture']
-            request.user.save()
+            if request.data['bio']:
+                request.user.userprofile.bio = request.data['bio']
+            if request.data['profile_picture']: 
+                request.user.userprofile.profile_picture = request.data['profile_picture']
+            request.user.userprofile.save()
             return Response({"message": "Edited Successfully"})
         except:
             return Response({"error": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST)
@@ -69,7 +71,7 @@ class PhotoViewSet(viewsets.ModelViewSet):
                     },
                     "image": photo.image.url
                 })
-        response = {"photos" : photos, "user": request.user.username}
+        response = {"photos" : list(reversed(photos)), "user": { "username": request.user.username, "profile_picture": request.user.userprofile.profile_picture.url, "bio": request.user.userprofile.bio }}
         return Response(response, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=["GET"])
@@ -78,7 +80,11 @@ class PhotoViewSet(viewsets.ModelViewSet):
         for photo in Photo.objects.filter(userprofile=request.user.userprofile):
             photos.append({
                     "id": photo.id,
+                    "userprofile": {
+                        "id": photo.userprofile.id,
+                        "profile_picture": photo.userprofile.profile_picture.url
+                    },
                     "image": photo.image.url
                 })
-        response = {"photos" : photos, "user": { "username": request.user.username, "profile_picture": request.user.userprofile.profile_picture.url }}
+        response = {"photos" : list(reversed(photos)), "user": { "username": request.user.username, "profile_picture": request.user.userprofile.profile_picture.url, "bio": request.user.userprofile.bio }}
         return Response(response, status=status.HTTP_200_OK)
